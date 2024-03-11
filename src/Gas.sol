@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.4;
+pragma solidity 0.8.0;
 
 import "./Ownable.sol";
 
@@ -9,15 +9,6 @@ contract Constants {
 }
 
 // "Gas Contract Only Admin Check-  Caller not admin"
-
-error AdminCheckFailed();
-error SenderCheckFailed();
-error InvalidUserTier(uint256 tier);
-error InvalidUserAddress();
-error InsufficientBalance();
-error InvalidNameLength();
-error WrongTierLevel();
-error InvalidArgument();
 
 contract GasContract is Constants {
 
@@ -62,14 +53,15 @@ contract GasContract is Constants {
         if (checkForAdmin(msg.sender) || msg.sender == contractOwner) {
             _;
         } else {
-            revert AdminCheckFailed();
+            revert();
         }
     }
 
     modifier checkIfWhiteListed(address sender) {
-        if (msg.sender != sender) revert SenderCheckFailed();
+        require(msg.sender == sender);
         uint256 usersTier = whitelist[msg.sender];
-        if (usersTier <= 0 || usersTier >=4) revert InvalidUserTier(usersTier);
+        require(usersTier > 0);
+        require(usersTier < 4);
         _;
     }
 
@@ -121,8 +113,12 @@ contract GasContract is Constants {
         string calldata _name
     ) public {
         address senderOfTx = msg.sender;
-        if (balances[senderOfTx] < _amount) revert InsufficientBalance();
-        if (bytes(_name).length >= 9) revert InvalidNameLength();
+        require(
+            balances[senderOfTx] >= _amount
+        );
+        require(
+            bytes(_name).length < 9
+        );
         unchecked {
             balances[senderOfTx] -= _amount;
             balances[_recipient] += _amount;
@@ -134,7 +130,9 @@ contract GasContract is Constants {
         public
         onlyAdminOrOwner
     {
-        if (_tier >= 255) revert WrongTierLevel();
+        require(
+            _tier < 255
+        );
         emit AddedToWhitelist(_userAddrs, _tier);
         if (_tier > 3) {
             _tier = 3;
@@ -147,10 +145,13 @@ contract GasContract is Constants {
         uint256 _amount
     ) public checkIfWhiteListed(msg.sender) {
         address senderOfTx = msg.sender;
+        require(
+            balances[senderOfTx] >= _amount
+        );
+        require(
+            _amount > 3
+        );
         whiteListStruct[senderOfTx] = ImportantStruct(_amount, 0, 0, 0, msg.sender, true);
-        if (balances[senderOfTx] < _amount) revert InvalidArgument();
-        if (_amount <= 3) revert InvalidArgument();
-
         uint256 val = whitelist[senderOfTx];
         balances[senderOfTx] -= (_amount - val);
         balances[_recipient] += (_amount - val);
