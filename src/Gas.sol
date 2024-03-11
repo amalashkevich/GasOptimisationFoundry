@@ -22,11 +22,11 @@ error InvalidArgument();
 
 contract GasContract is Constants {
 
-    uint256 immutable totalSupply; // cannot be updated
+    uint256 immutable private totalSupply; // cannot be updated
     uint256 private paymentCounter = 0;
     mapping(address => uint256) public balances;
     uint256 private tradePercent = 12;
-    address private contractOwner;
+    address immutable private contractOwner;
     uint256 private tradeMode = 0;
     mapping(address => Payment[]) private payments;
     mapping(address => uint256) public whitelist;
@@ -73,11 +73,9 @@ contract GasContract is Constants {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        address senderOfTx = msg.sender;
-        if (checkForAdmin(senderOfTx)) {
-            if (!checkForAdmin(senderOfTx)) revert AdminCheckFailed();
+        if (checkForAdmin(msg.sender)) {
             _;
-        } else if (senderOfTx == contractOwner) {
+        } else if (msg.sender == contractOwner) {
             _;
         } else {
             revert AdminCheckFailed();
@@ -121,13 +119,13 @@ contract GasContract is Constants {
         }
     }
 
-    function getPaymentHistory()
-        public
-        payable
-        returns (History[] memory paymentHistory_)
-    {
-        return paymentHistory;
-    }
+//    function getPaymentHistory()
+//        public
+//        payable
+//        returns (History[] memory paymentHistory_)
+//    {
+//        return paymentHistory;
+//    }
 
     function checkForAdmin(address _user) public view returns (bool admin_) {
         admin_ = administrators2[_user];
@@ -137,23 +135,23 @@ contract GasContract is Constants {
         return balances[_user];
     }
 
-    function getTradingMode() public view returns (bool mode_) {
-        return (tradeFlag == 1 || dividendFlag == 1);
-    }
+//    function getTradingMode() public view returns (bool mode_) {
+//        return (tradeFlag == 1 || dividendFlag == 1);
+//    }
 
 
-    function addHistory(address _updateAddress, bool _tradeMode)
-        public
-        returns (bool status_, bool tradeMode_)
-    {
-        History memory history;
-        history.blockNumber = block.number;
-        history.lastUpdate = block.timestamp;
-        history.updatedBy = _updateAddress;
-        paymentHistory.push(history);
-
-        return (true, _tradeMode);
-    }
+//    function addHistory(address _updateAddress, bool _tradeMode)
+//        public
+//        returns (bool status_, bool tradeMode_)
+//    {
+//        History memory history;
+//        history.blockNumber = block.number;
+//        history.lastUpdate = block.timestamp;
+//        history.updatedBy = _updateAddress;
+//        paymentHistory.push(history);
+//
+//        return (true, _tradeMode);
+//    }
 
     function getPayments(address _user)
         public
@@ -186,43 +184,43 @@ contract GasContract is Constants {
         payments[senderOfTx].push(payment);
     }
 
-    function updatePayment(
-        address _user,
-        uint256 _ID,
-        uint256 _amount,
-        PaymentType _type
-    ) public onlyAdminOrOwner {
-        if (_ID <= 0) revert InvalidArgument();
-        if (_amount <= 0) revert InvalidArgument();
-        if (_user == address(0)) revert InvalidArgument();
-        address senderOfTx = msg.sender;
-
-        for (uint256 i = 0; i < payments[_user].length; i++) {
-            if (payments[_user][i].paymentID == _ID) {
-                Payment memory p = payments[_user][i];
-
-                Payment memory upd = Payment({
-                    paymentType: _type,
-                    paymentID: _ID,
-                    adminUpdated: true,
-                    recipientName: p.recipientName,
-                    recipient: p.recipient,
-                    admin: _user,
-                    amount: _amount
-                });
-                payments[_user][i] = upd;
-
-                addHistory(_user, getTradingMode());
-                emit PaymentUpdated(
-                    senderOfTx,
-                    _ID,
-                    _amount,
-                    p.recipientName
-                );
-            }
-        }
-    }
-
+//    function updatePayment(
+//        address _user,
+//        uint256 _ID,
+//        uint256 _amount,
+//        PaymentType _type
+//    ) public onlyAdminOrOwner {
+//        if (_ID <= 0) revert InvalidArgument();
+//        if (_amount <= 0) revert InvalidArgument();
+//        if (_user == address(0)) revert InvalidArgument();
+//        address senderOfTx = msg.sender;
+//
+//        for (uint256 i = 0; i < payments[_user].length; i++) {
+//            if (payments[_user][i].paymentID == _ID) {
+//                Payment memory p = payments[_user][i];
+//
+//                Payment memory upd = Payment({
+//                    paymentType: _type,
+//                    paymentID: _ID,
+//                    adminUpdated: true,
+//                    recipientName: p.recipientName,
+//                    recipient: p.recipient,
+//                    admin: _user,
+//                    amount: _amount
+//                });
+//                payments[_user][i] = upd;
+//
+//                addHistory(_user, getTradingMode());
+//                emit PaymentUpdated(
+//                    senderOfTx,
+//                    _ID,
+//                    _amount,
+//                    p.recipientName
+//                );
+//            }
+//        }
+//    }
+//
     function addToWhitelist(address _userAddrs, uint256 _tier)
         public
         onlyAdminOrOwner
@@ -263,8 +261,4 @@ contract GasContract is Constants {
         payable(msg.sender).transfer(msg.value);
     }
 
-
-    fallback() external payable {
-         payable(msg.sender).transfer(msg.value);
-    }
 }
